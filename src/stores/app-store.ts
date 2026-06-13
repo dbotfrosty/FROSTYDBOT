@@ -19,7 +19,6 @@ export default class AppStore {
     dbot_store: RootStore | null;
     api_helpers_store: TApiHelpersStore | null;
     timer: ReturnType<typeof setInterval> | null;
-    is_workspace_initialized: boolean;
     disposeReloadOnLanguageChangeReaction: unknown;
     disposeCurrencyReaction: unknown;
     disposeSwitchAccountListener: unknown;
@@ -44,7 +43,6 @@ export default class AppStore {
         this.dbot_store = null;
         this.api_helpers_store = null;
         this.timer = null;
-        this.is_workspace_initialized = false;
     }
 
     getErrorForNonEuClients = () => ({
@@ -162,8 +160,7 @@ export default class AppStore {
         this.showDigitalOptionsMaltainvestError();
 
         if (!this.dbot_store) return;
-        if (this.is_workspace_initialized) return;
-        this.is_workspace_initialized = true;
+        if (window.Blockly?.derivWorkspace) return;
 
         let timer_counter = 1;
 
@@ -178,27 +175,6 @@ export default class AppStore {
                 }
             }
         }, 10000);
-
-        // Wait for #scratch_div to be in the DOM before initializing Blockly
-        await new Promise<void>(resolve => {
-            if (document.getElementById('scratch_div')) {
-                resolve();
-                return;
-            }
-            let attempts = 0;
-            const interval = setInterval(() => {
-                attempts++;
-                if (document.getElementById('scratch_div') || attempts > 100) {
-                    clearInterval(interval);
-                    resolve();
-                }
-            }, 100);
-        });
-
-        if (!document.getElementById('scratch_div')) {
-            blockly_store.setLoading(false);
-            return;
-        }
 
         blockly_store.setLoading(true);
         await DBot.initWorkspace('/', this.dbot_store, this.api_helpers_store, ui.is_mobile, false);
@@ -227,7 +203,6 @@ export default class AppStore {
     };
 
     onUnmount = () => {
-        this.is_workspace_initialized = false;
         DBot.terminateBot();
         DBot.terminateConnection();
         if (window.Blockly?.derivWorkspace) {

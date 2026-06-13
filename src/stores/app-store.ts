@@ -19,6 +19,7 @@ export default class AppStore {
     dbot_store: RootStore | null;
     api_helpers_store: TApiHelpersStore | null;
     timer: ReturnType<typeof setInterval> | null;
+    is_workspace_initialized: boolean;
     disposeReloadOnLanguageChangeReaction: unknown;
     disposeCurrencyReaction: unknown;
     disposeSwitchAccountListener: unknown;
@@ -43,6 +44,7 @@ export default class AppStore {
         this.dbot_store = null;
         this.api_helpers_store = null;
         this.timer = null;
+        this.is_workspace_initialized = false;
     }
 
     getErrorForNonEuClients = () => ({
@@ -159,6 +161,10 @@ export default class AppStore {
         const { client, ui } = this.core;
         this.showDigitalOptionsMaltainvestError();
 
+        if (!this.dbot_store) return;
+        if (this.is_workspace_initialized) return;
+        this.is_workspace_initialized = true;
+
         let timer_counter = 1;
 
         this.timer = setInterval(() => {
@@ -172,8 +178,6 @@ export default class AppStore {
                 }
             }
         }, 10000);
-
-        if (!this.dbot_store) return;
 
         blockly_store.setLoading(true);
         await DBot.initWorkspace('/', this.dbot_store, this.api_helpers_store, ui.is_mobile, false);
@@ -202,6 +206,7 @@ export default class AppStore {
     };
 
     onUnmount = () => {
+        this.is_workspace_initialized = false;
         DBot.terminateBot();
         DBot.terminateConnection();
         if (window.Blockly?.derivWorkspace) {

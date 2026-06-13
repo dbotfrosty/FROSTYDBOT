@@ -305,15 +305,7 @@ const AppWrapper = observer(() => {
                                     </>
                                 }
                                 id='id-bot-builder'
-                            >
-                                <Suspense
-                                    fallback={
-                                        <ChunkLoader message={localize('Please wait, loading bot builder...')} />
-                                    }
-                                >
-                                    <BotBuilder />
-                                </Suspense>
-                            </div>
+                            />
                             <div
                                 label={
                                     <>

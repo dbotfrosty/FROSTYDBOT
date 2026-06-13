@@ -412,17 +412,7 @@ const AppWrapper = observer(() => {
                                     </>
                                 }
                                 id='id-market-analyzer'
-                            >
-                                <div className='market-analyzer-wrapper'>
-                                    <Suspense
-                                        fallback={
-                                            <ChunkLoader message={localize('Please wait, loading market analyzer...')} />
-                                        }
-                                    >
-                                        <MarketAnalyzer />
-                                    </Suspense>
-                                </div>
-                            </div>
+                            />
                             <div
                                 label={
                                     <>
@@ -435,19 +425,25 @@ const AppWrapper = observer(() => {
                                     </>
                                 }
                                 id='id-d-circles'
-                            >
-                                <div className='d-circles-wrapper'>
-                                    <Suspense
-                                        fallback={
-                                            <ChunkLoader message={localize('Please wait, loading D-Circles...')} />
-                                        }
-                                    >
-                                        <DCircles />
-                                    </Suspense>
-                                </div>
-                            </div>
+                            />
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
+                    </div>
+                    <div
+                        className={classNames('external-iframe-panel', {
+                            'external-iframe-panel--active': active_tab === DBOT_TABS.MARKET_ANALYZER,
+                            'external-iframe-panel--inactive': active_tab !== DBOT_TABS.MARKET_ANALYZER,
+                        })}
+                    >
+                        <MarketAnalyzer />
+                    </div>
+                    <div
+                        className={classNames('external-iframe-panel', {
+                            'external-iframe-panel--active': active_tab === DBOT_TABS.D_CIRCLES,
+                            'external-iframe-panel--inactive': active_tab !== DBOT_TABS.D_CIRCLES,
+                        })}
+                    >
+                        <DCircles />
                     </div>
                 </div>
             </div>

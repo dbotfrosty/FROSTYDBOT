@@ -151,7 +151,11 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
         }
     };
 
-    if (!symbol) return null;
+    // Don't mount SmartChart until the connection is truly open.
+    // SmartChart calls requestAPI({active_symbols}) immediately on mount, so
+    // chart_api.api must be OPEN before we let it render — otherwise the
+    // request fails silently and _onConnectionReopened never retries it.
+    if (!symbol || !is_connection_opened) return null;
 
     return (
         <div

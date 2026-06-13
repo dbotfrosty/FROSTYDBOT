@@ -179,6 +179,27 @@ export default class AppStore {
             }
         }, 10000);
 
+        // Wait for #scratch_div to be in the DOM before initializing Blockly
+        await new Promise<void>(resolve => {
+            if (document.getElementById('scratch_div')) {
+                resolve();
+                return;
+            }
+            let attempts = 0;
+            const interval = setInterval(() => {
+                attempts++;
+                if (document.getElementById('scratch_div') || attempts > 100) {
+                    clearInterval(interval);
+                    resolve();
+                }
+            }, 100);
+        });
+
+        if (!document.getElementById('scratch_div')) {
+            blockly_store.setLoading(false);
+            return;
+        }
+
         blockly_store.setLoading(true);
         await DBot.initWorkspace('/', this.dbot_store, this.api_helpers_store, ui.is_mobile, false);
 

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
-import { api_base } from '@/external/bot-skeleton';
 import chart_api from '@/external/bot-skeleton/services/api/chart-api';
 import { useStore } from '@/hooks/useStore';
 import {
@@ -17,28 +16,22 @@ import ToolbarWidgets from './toolbar-widgets';
 import '@deriv/deriv-charts/dist/smartcharts.css';
 
 type TSubscription = {
-    [key: string]: null | {
-        unsubscribe?: () => void;
-    };
+    [key: string]: null | { unsubscribe?: () => void };
 };
 
 type TError = null | {
-    error?: {
-        code?: string;
-        message?: string;
-    };
+    error?: { code?: string; message?: string };
 };
 
 const subscriptions: TSubscription = {};
-
-const getApi = () => api_base?.api;
 
 const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) => {
     const barriers: [] = [];
     const { common, ui } = useStore();
     const { chart_store, run_panel, dashboard } = useStore();
     const [isSafari, setIsSafari] = useState(false);
-    const [is_connection_opened, setIsConnectionOpened] = useState(!!api_base?.api);
+    const [is_connection_opened, setIsConnectionOpened] = useState(false);
+    const chart_api_ref = useRef<typeof chart_api.api>(null);
 
     const {
         chart_type,
@@ -72,7 +65,62 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
             return ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1 && ua.indexOf('android') === -1;
         };
         setIsSafari(isSafariBrowser());
+    }, []);
 
+    // Wait for chart_api.api WebSocket to be truly OPEN before enabling SmartChart
+    useEffect(() => {
+        let cancelled = false;
+        let poll_interval: ReturnType<typeof setInterval> | null = null;
+
+        const checkAndSet = () => {
+            const api = chart_api.api;
+            if (!api) return false;
+            const state = api.connection?.readyState;
+            if (state === WebSocket.OPEN) {
+                chart_api_ref.current = api;
+                if (!cancelled) setIsConnectionOpened(true);
+                return true;
+            }
+            return false;
+        };
+
+        const start = async () => {
+            // Init chart_api if not already
+            if (!chart_api.api) {
+                await chart_api.init();
+            }
+
+            // If already open, set immediately
+            if (checkAndSet()) return;
+
+            // Otherwise poll until open
+            poll_interval = setInterval(() => {
+                const api = chart_api.api;
+                if (!api) return;
+                const state = api.connection?.readyState;
+                if (state === WebSocket.OPEN) {
+                    chart_api_ref.current = api;
+                    if (!cancelled) setIsConnectionOpened(true);
+                    if (poll_interval) clearInterval(poll_interval);
+                } else if (state === WebSocket.CLOSED || state === WebSocket.CLOSING) {
+                    // Dead connection - reinit
+                    chart_api.init(true).then(() => {
+                        // will be picked up on next interval tick
+                    });
+                }
+            }, 100);
+        };
+
+        start();
+
+        return () => {
+            cancelled = true;
+            if (poll_interval) clearInterval(poll_interval);
+        };
+    }, []);
+
+    // Cleanup on unmount
+    useEffect(() => {
         return () => {
             try {
                 Object.keys(subscriptions).forEach(id => {
@@ -82,26 +130,11 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
                     }
                     delete subscriptions[id];
                 });
-                const api = getApi();
-                api?.forgetAll('ticks');
+                chart_api.api?.forgetAll('ticks');
             } catch {
-                // ignore cleanup errors
+                // ignore
             }
         };
-    }, []);
-
-    useEffect(() => {
-        if (!api_base?.api) {
-            const interval = setInterval(() => {
-                if (api_base?.api) {
-                    setIsConnectionOpened(true);
-                    clearInterval(interval);
-                }
-            }, 200);
-            return () => clearInterval(interval);
-        } else {
-            setIsConnectionOpened(true);
-        }
     }, []);
 
     useEffect(() => {
@@ -112,18 +145,19 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
         if (!symbol) {
             updateSymbol();
             const retry = setInterval(() => {
-                updateSymbol();
+                if (!symbol) updateSymbol();
+                else clearInterval(retry);
             }, 500);
             return () => clearInterval(retry);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [symbol]);
 
+    const getApi = () => chart_api_ref.current || chart_api.api;
+
     const requestAPI = async (req: ServerTimeRequest | ActiveSymbolsRequest | TradingTimesRequest) => {
         const api = getApi();
-        if (!api) {
-            throw new Error('API not initialized');
-        }
+        if (!api) throw new Error('Chart API not initialized');
         return api.send(req);
     };
 
@@ -143,12 +177,21 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
     };
 
     const requestSubscribe = async (req: TicksStreamRequest, callback: (data: any) => void) => {
+        const api = getApi();
+        if (!api) return;
+
         try {
+            // Unsubscribe RxJS listeners and clear our local map
             const prev_id = chartSubscriptionIdRef.current;
             if (prev_id) requestForgetStream(prev_id);
 
-            const api = getApi();
-            if (!api) throw new Error('API not initialized');
+            // Tell the server to drop ALL stale tick subscriptions on this connection
+            // This prevents the "AlreadySubscribed" error when the chart remounts
+            try {
+                await api.send({ forget_all: 'ticks' });
+            } catch {
+                // not a hard failure — proceed anyway
+            }
 
             const history = await api.send(req);
             const subscription_id = history?.subscription?.id;
@@ -156,18 +199,21 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
             if (history) callback(history);
 
             if (req.subscribe === 1 && subscription_id) {
-                const msg_subscription = api
-                    .onMessage()
-                    ?.subscribe(({ data }: { data: TicksHistoryResponse & { subscription?: { id: string } } }) => {
-                        if ((data as any)?.subscription?.id === subscription_id) {
+                const msg_subscription = api.onMessage()?.subscribe(
+                    ({ data }: { data: TicksHistoryResponse & { subscription?: { id: string } } }) => {
+                        if (
+                            (data as any)?.subscription?.id === subscription_id ||
+                            (data as any)?.tick?.id === subscription_id
+                        ) {
                             callback(data);
                         }
-                    });
+                    }
+                );
                 subscriptions[subscription_id] = msg_subscription;
             }
         } catch (e) {
+            if ((e as TError)?.error?.code === 'MarketIsClosed') callback([]);
             // eslint-disable-next-line no-console
-            (e as TError)?.error?.code === 'MarketIsClosed' && callback([]);
             console.log((e as TError)?.error?.message);
         }
     };

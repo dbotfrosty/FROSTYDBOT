@@ -124,7 +124,21 @@ const Chart = observer(({ show_digits_stats }: { show_digits_stats: boolean }) =
         }
     };
 
-    if (!symbol) return null;
+    if (!symbol)
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    color: 'var(--text-general)',
+                    fontSize: '1.4rem',
+                }}
+            >
+                Loading chart...
+            </div>
+        );
     const is_connection_opened = !!chart_api?.api;
     return (
         <div

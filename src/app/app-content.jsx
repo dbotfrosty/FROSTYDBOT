@@ -269,6 +269,18 @@ const AppContent = observer(() => {
         }
     }, []);
 
+    // Hard safety net: if loading hasn't cleared after 4s, force it through
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (!app.dbot_store) {
+                init();
+            }
+            setIsLoading(false);
+        }, 4000);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     if (common?.error) return null;
 
     // Show loading message based on online/offline state

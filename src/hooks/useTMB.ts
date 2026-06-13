@@ -201,7 +201,10 @@ const useTMB = (): UseTMBReturn => {
                 const url = is_staging
                     ? 'https://app-config-staging.firebaseio.com/remote_config/oauth/is_tmb_enabled.json'
                     : 'https://app-config-prod.firebaseio.com/remote_config/oauth/is_tmb_enabled.json';
-                const response = await fetch(url);
+                const controller = new AbortController();
+                const fetchTimeout = setTimeout(() => controller.abort(), 1000);
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(fetchTimeout);
                 const result = await response.json();
 
                 const isEnabled = !!result.dbot;
@@ -260,7 +263,7 @@ const useTMB = (): UseTMBReturn => {
         const safetyTimeout = setTimeout(() => {
             setIsInitialized(true);
             setIsTmbCheckComplete(true);
-        }, 2500);
+        }, 800);
 
         const initializeHook = async () => {
             try {

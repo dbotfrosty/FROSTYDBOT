@@ -71,7 +71,7 @@ const AppRoot = () => {
             if (!is_api_initialized) {
                 setIsApiInitialized(true);
             }
-        }, 5000);
+        }, 1500);
 
         const initializeApi = async () => {
             if (!api_base_initialized.current) {

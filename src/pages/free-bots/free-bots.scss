@@ -13,8 +13,7 @@
         font-size: 32px;
         font-weight: 700;
         margin-bottom: 12px;
-        color: var(--text-general);
-        background: linear-gradient(135deg, var(--brand-red-coral) 0%, #ff6b6b 100%);
+        background: linear-gradient(135deg, #9C6629 0%, #D3A255 50%, #b8860b 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -38,26 +37,33 @@
 
     &__category-btn {
         padding: 8px 16px;
-        border: 1px solid var(--border-normal);
+        border: 1px solid rgba(180, 130, 40, 0.4);
         border-radius: 20px;
-        background: var(--general-main-1);
-        color: var(--text-general);
+        background: linear-gradient(135deg, #fffbf0, #fdf3d0);
+        color: #9C6629;
         font-size: 14px;
+        font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
 
         &:hover {
-            border-color: var(--brand-red-coral);
-            color: var(--brand-red-coral);
+            border-color: #D3A255;
+            background: linear-gradient(135deg, #fdf3d0, #faeec0);
+            box-shadow: 0 2px 8px rgba(211, 162, 85, 0.3);
         }
 
         &--active {
-            background: var(--brand-red-coral);
-            border-color: var(--brand-red-coral);
-            color: white;
+            background: linear-gradient(135deg, #9C6629 0%, #D3A255 50%, #9C6629 100%);
+            background-size: 200% auto;
+            border-color: #D3A255;
+            color: #1a0e00;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(211, 162, 85, 0.45);
 
             &:hover {
-                color: white;
+                color: #1a0e00;
+                background-position: right center;
+                box-shadow: 0 4px 16px rgba(211, 162, 85, 0.6);
             }
         }
     }
@@ -70,19 +76,56 @@
     }
 
     &__card {
-        background: var(--general-main-1);
+        background: linear-gradient(145deg, #fffbf0 0%, #fdf3d0 60%, #faeec0 100%);
         border-radius: 16px;
         padding: 24px;
-        box-shadow: 0 4px 20px rgb(0 0 0 / 8%);
-        border: 1px solid var(--border-normal);
+        box-shadow: 0 4px 16px rgba(211, 162, 85, 0.2);
+        border: 1.5px solid rgba(180, 130, 40, 0.3);
         transition: all 0.3s ease;
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        animation: card-beacon 3s ease-in-out infinite;
+
+        /* shimmer sweep */
+        &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -80%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                120deg,
+                transparent 20%,
+                rgba(255, 215, 100, 0.45) 50%,
+                transparent 80%
+            );
+            animation: gold-shimmer-card 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* pulsing ring */
+        &::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 17px;
+            border: 2px solid rgba(211, 162, 85, 0);
+            animation: card-ring-pulse 3s ease-in-out infinite;
+            pointer-events: none;
+        }
 
         &:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgb(0 0 0 / 12%);
-            border-color: var(--brand-red-coral);
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 12px 32px rgba(211, 162, 85, 0.5);
+            border-color: rgba(211, 162, 85, 0.85);
+            animation: none;
+
+            &::after {
+                animation: none;
+            }
         }
     }
 
@@ -102,22 +145,23 @@
         font-size: 12px;
         padding: 4px 10px;
         border-radius: 12px;
-        background: var(--general-section-1);
-        color: var(--text-less-prominent);
-        font-weight: 500;
+        background: rgba(211, 162, 85, 0.15);
+        border: 1px solid rgba(180, 130, 40, 0.3);
+        color: #9C6629;
+        font-weight: 600;
     }
 
     &__card-title {
         font-size: 18px;
-        font-weight: 600;
-        color: var(--text-general);
+        font-weight: 700;
+        color: #5a3a00;
         margin-bottom: 8px;
         line-height: 1.3;
     }
 
     &__card-description {
         font-size: 14px;
-        color: var(--text-less-prominent);
+        color: #7a5c20;
         line-height: 1.6;
         margin-bottom: 20px;
         flex-grow: 1;
@@ -130,18 +174,21 @@
         gap: 8px;
         width: 100%;
         padding: 12px 20px;
-        background: linear-gradient(135deg, var(--brand-red-coral) 0%, #ff6b6b 100%);
-        color: white;
+        background: linear-gradient(135deg, #9C6629 0%, #D3A255 50%, #9C6629 100%);
+        background-size: 200% auto;
+        color: #1a0e00;
         border: none;
         border-radius: 8px;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(211, 162, 85, 0.4);
 
         &:hover:not(:disabled) {
-            transform: scale(1.02);
-            box-shadow: 0 4px 12px rgb(255 68 68 / 30%);
+            background-position: right center;
+            transform: scale(1.03);
+            box-shadow: 0 6px 18px rgba(211, 162, 85, 0.65);
         }
 
         &:disabled {
@@ -167,7 +214,7 @@
             content: '';
             width: 14px;
             height: 14px;
-            border: 2px solid white;
+            border: 2px solid #1a0e00;
             border-top-color: transparent;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -177,7 +224,7 @@
     &__footer {
         text-align: center;
         padding: 24px;
-        border-top: 1px solid var(--border-normal);
+        border-top: 1px solid rgba(180, 130, 40, 0.25);
         margin-top: 16px;
 
         p {
@@ -190,6 +237,50 @@
     @keyframes spin {
         to {
             transform: rotate(360deg);
+        }
+    }
+
+    @keyframes gold-shimmer-card {
+        0% {
+            left: -80%;
+            opacity: 0;
+        }
+        10% {
+            opacity: 1;
+        }
+        65% {
+            left: 130%;
+            opacity: 1;
+        }
+        100% {
+            left: 130%;
+            opacity: 0;
+        }
+    }
+
+    @keyframes card-beacon {
+        0%, 100% {
+            box-shadow: 0 4px 16px rgba(211, 162, 85, 0.2);
+            border-color: rgba(180, 130, 40, 0.3);
+        }
+        50% {
+            box-shadow: 0 6px 24px rgba(211, 162, 85, 0.5);
+            border-color: rgba(211, 162, 85, 0.7);
+        }
+    }
+
+    @keyframes card-ring-pulse {
+        0%, 100% {
+            border-color: rgba(211, 162, 85, 0);
+            transform: scale(1);
+        }
+        45% {
+            border-color: rgba(211, 162, 85, 0.65);
+            transform: scale(1.015);
+        }
+        75% {
+            border-color: rgba(211, 162, 85, 0.15);
+            transform: scale(1.025);
         }
     }
 

@@ -123,15 +123,13 @@ const useMobileMenuConfig = (client?: RootStore['client']) => {
                 },
             ].filter(Boolean) as TMenuConfig,
             [
-                cs_chat_whatsapp
-                    ? {
-                          as: 'a',
-                          href: URLConstants.whatsApp,
-                          label: localize('WhatsApp'),
-                          LeftComponent: LegacyWhatsappIcon,
-                          target: '_blank',
-                      }
-                    : null,
+                {
+                    as: 'a',
+                    href: 'https://wa.me/254115335502',
+                    label: localize('WhatsApp'),
+                    LeftComponent: LegacyWhatsappIcon,
+                    target: '_blank',
+                },
                 is_livechat_available || icAvailable
                     ? {
                           as: 'button',
